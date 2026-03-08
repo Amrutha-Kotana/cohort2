@@ -1,0 +1,62 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Transform: AWS::Serverless-2016-10-31
+
+Globals:
+  Function:
+    Runtime: python3.13
+    Timeout: 10
+    Tracing: Active
+    Environment:
+      Variables:
+        TABLE_NAME: !Ref UrlTable
+        POWERTOOLS_SERVICE_NAME: url-shortener
+        POWERTOOLS_METRICS_NAMESPACE: UrlShortener
+        LOG_LEVEL: INFO
+
+Resources:
+  CreateUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/create_short_url.lambda_handler
+      # Layers:
+      #   - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV3-python313:7
+      Policies:
+        - DynamoDBCrudPolicy:
+            TableName: !Ref UrlTable
+      Events:
+        CreateUrl:
+          Type: Api
+          Properties:
+            Path: /shorten
+            Method: post
+
+  GetUrlFunction:
+    Type: AWS::Serverless::Function
+    Properties:
+      Handler: src/handlers/get_url.lambda_handler
+      # Layers:
+      #  - !Sub arn:aws:lambda:${AWS::Region}:017000801446:layer:AWSLambdaPowertoolsPythonV3-python313:7
+      Policies:
+        - DynamoDBReadPolicy:
+            TableName: !Ref UrlTable
+      Events:
+        GetUrl:
+          Type: Api
+          Properties:
+            Path: /{shortCode}
+            Method: get
+
+  UrlTable:
+    Type: AWS::DynamoDB::Table
+    Properties:
+      BillingMode: PAY_PER_REQUEST
+      AttributeDefinitions:
+        - AttributeName: shortCode
+          AttributeType: S
+      KeySchema:
+        - AttributeName: shortCode
+          KeyType: HASH
+
+Outputs:
+  ApiEndpoint:
+    Value: !Sub "https://${ServerlessRestApi}.execute-api.${AWS::Region}.amazonaws.com/Prod"

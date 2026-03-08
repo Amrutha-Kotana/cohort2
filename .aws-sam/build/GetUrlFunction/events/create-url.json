@@ -1,0 +1,6 @@
+{
+  "body": "{\"url\": \"https://aws.amazon.com\"}",
+  "httpMethod": "POST",
+  "path": "/shorten",
+  "headers": { "Content-Type": "application/json" }
+}
